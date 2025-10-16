@@ -37,7 +37,7 @@ SEL-MAIN/
 ## ▶️ Cómo abrir/usar
 
 - **Opción recomendada (online):**  
-  Abre **https://dainty-platypus-bfb8e4.netlify.app/**
+  Abre **https://illustrious-rabanadas-79a5c5.netlify.app/**
 - **Opción local (para desarrollo):**
   1. Clona el repo.
   2. Abre `index.html` en tu navegador (doble clic o con *Live Server*).
@@ -52,7 +52,7 @@ SEL-MAIN/
 ## 🧠 ¿Qué hace cada archivo? (resumen)
 
 - **index.html**  
-  Página principal, contiene HTML, estilos base y **toda la lógica JS embebida** para:
+  Página principal, contiene HTML, estilos base y **toda la lógica PY embebida** para:
   - generar la matriz aumentada `[A|b]`,
   - calcular el **determinante** de `A`,
   - reducir con **Gauss–Jordan** a **RREF**,
