@@ -1,7 +1,7 @@
 # project2-teamKarkerkarkurkur
 
 Repositorio del proyecto **SEL-MAIN**.  
-Este README documenta el funcionamiento de la calculadora de **Eliminación de Gauss–Jordan**, describe cada archivo brevemente
+Este README documenta el funcionamiento de la calculadora de **Eliminación de Gauss–Jordan**, describe cada archivo brevemente.
 
 ---
 
@@ -20,7 +20,7 @@ Este README documenta el funcionamiento de la calculadora de **Eliminación de G
 > **No se requiere instalación.**  
 > Abre la aplicación directamente en tu navegador:
 >
-> 👉 https://dainty-platypus-bfb8e4.netlify.app/
+> 👉 https://illustrious-rabanadas-79a5c5.netlify.app/
 
 ---
 
