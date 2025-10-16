@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gauss-Jordan Interactivo</title>
+
+  <!-- PyScript moderno -->
+  <link rel="stylesheet" href="https://pyscript.net/releases/2024.9.1/core.css">
+  <script type="module" src="https://pyscript.net/releases/2024.9.1/core.js"></script>
+
+  <!-- 🔹 Aquí cargamos numpy automáticamente -->
+  <py-config>
+    packages = ["numpy"]
+  </py-config>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+    }
+    .input-section {
+      margin-bottom: 20px;
+    }
+    .matrix-input {
+      display: grid;
+      gap: 5px;
+      margin: 15px 0;
+    }
+    input {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .result-section {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      overflow-x: auto;
+      min-height: 200px;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+    .step {
+      margin-bottom: 15px;
+      padding: 10px;
+      border-left: 3px solid #4CAF50;
+      background-color: #f0f8f0;
+    }
+    .matrix-container {
+      display: inline-block;
+      margin: 10px 0;
+    }
+    .matrix-row {
+      display: flex;
+      margin-bottom: 5px;
+    }
+    .matrix-cell {
+      width: 60px;
+      margin: 0 5px;
+    }
+    .matrix-cell input {
+      width: 100%;
+      text-align: center;
+    }
+    .separator {
+      margin: 0 10px;
+      display: flex;
+      align-items: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔢 Calculadora Gauss-Jordan</h1>
+    
+    <div class="input-section">
+      <div>
+        <label for="matrixSize">Tamaño de la matriz (n x n):</label>
+        <input type="number" id="matrixSize" min="2" max="10" value="4">
+        <button id="setSizeBtn">Establecer Tamaño</button>
+      </div>
+      
+      <div id="matrixInputs"></div>
+      
+      <div>
+        <button id="btnCalcular">Calcular</button>
+      </div>
+    </div>
+    
+    <h2>🧮 Resultado:</h2>
+    <div class="result-section" id="resultado"></div>
+  </div>
+
+  <py-script>
+from js import document, console
+from pyodide.ffi import create_proxy
+import numpy as np
+
+# Variables globales para PyScript
+matrix_size = 4
+
+# Función para crear los inputs de la matriz
+def create_matrix_inputs():
+    matrix_inputs_div = document.getElementById("matrixInputs")
+    matrix_inputs_div.innerHTML = ''
+    
+    # Crear contenedor para la matriz aumentada
+    matrix_container = document.createElement("div")
+    matrix_container.className = "matrix-container"
+    
+    # Crear inputs para cada celda
+    for i in range(matrix_size):
+        row_div = document.createElement("div")
+        row_div.className = "matrix-row"
+        
+        # Inputs para la matriz A
+        for j in range(matrix_size):
+            cell_div = document.createElement("div")
+            cell_div.className = "matrix-cell"
+            
+            input_elem = document.createElement("input")
+            input_elem.type = "number"
+            input_elem.step = "any"
+            input_elem.value = "0"
+            input_elem.id = f"a_{i}_{j}"
+            
+            cell_div.appendChild(input_elem)
+            row_div.appendChild(cell_div)
+        
+        # Separador para la matriz aumentada
+        separator = document.createElement("div")
+        separator.className = "separator"
+        separator.textContent = "|"
+        row_div.appendChild(separator)
+        
+        # Input para el vector b
+        cell_div = document.createElement("div")
+        cell_div.className = "matrix-cell"
+        
+        input_elem = document.createElement("input")
+        input_elem.type = "number"
+        input_elem.step = "any"
+        input_elem.value = "0"
+        input_elem.id = f"b_{i}"
+        
+        cell_div.appendChild(input_elem)
+        row_div.appendChild(cell_div)
+        
+        matrix_container.appendChild(row_div)
+    
+    matrix_inputs_div.appendChild(matrix_container)
+
+# Función para establecer el tamaño de la matriz
+def set_matrix_size(event=None):
+    global matrix_size
+    size_input = document.getElementById("matrixSize")
+    matrix_size = int(size_input.value)
+    if matrix_size < 2 or matrix_size > 10:
+        console.log("El tamaño debe estar entre 2 y 10")
+        return
+    
+    create_matrix_inputs()
+
+# Función para obtener la matriz de los inputs
+def get_matrix_from_inputs():
+    A = []
+    b = []
+    
+    for i in range(matrix_size):
+        row = []
+        for j in range(matrix_size):
+            input_elem = document.getElementById(f"a_{i}_{j}")
+            row.append(float(input_elem.value) if input_elem.value else 0.0)
+        A.append(row)
+        
+        # Obtener el vector b
+        b_input = document.getElementById(f"b_{i}")
+        b.append(float(b_input.value) if b_input.value else 0.0)
+    
+    return np.array(A), np.array(b)
+
+# === Funciones de Gauss-Jordan ===
+def moverFilas(matriz_aumentada, indice_del_pivote, indice_de_la_matriz):
+    fila_temporal = matriz_aumentada[indice_de_la_matriz].copy()
+    matriz_aumentada[indice_de_la_matriz] = matriz_aumentada[indice_del_pivote]
+    matriz_aumentada[indice_del_pivote] = fila_temporal
+    return matriz_aumentada
+
+def generar_columna_actual(matriz_aumentada, columna, tamano):
+    columna_actual = [matriz_aumentada[i][columna] for i in range(tamano)]
+    return columna_actual
+
+def puntaje(valor_abs):
+    if valor_abs < 0.1: return valor_abs * 0.1
+    elif valor_abs > 100: return valor_abs * 0.5
+    else: return valor_abs
+
+def obtener_pivote(columna, fila_actual, tolerancia):
+    sub_columna = columna[fila_actual:]
+    for i, valor in enumerate(sub_columna):
+        if abs(abs(valor) - 1.0) < tolerancia:
+            return fila_actual + i, valor
+    enteros_seguros = [(fila_actual+i, v, abs(v)) for i,v in enumerate(sub_columna)
+                    if abs(v) > tolerancia and int(v) and 0.5 < abs(v) < 10]
+    if enteros_seguros:
+        indice, valor_min, _ = min(enteros_seguros, key=lambda x: x[2])
+        return indice, valor_min
+    candidatos = [(fila_actual+i, v, abs(v)) for i,v in enumerate(sub_columna) if abs(v) > tolerancia]
+    if not candidatos:
+        return None, None
+    candidatos.sort(key=lambda x: puntaje(x[2]), reverse=True)
+    return candidatos[0][0], candidatos[0][1]
+
+def normalizar_pivote(matriz_aumentada, indice_del_pivote, valor_del_pivote):
+    matriz_aumentada[indice_del_pivote] *= (1/valor_del_pivote)
+    return matriz_aumentada
+
+def confirmar_posicion_del_pivote(matriz_aumentada, indice_del_pivote, _, numero_de_fila):
+    if indice_del_pivote != numero_de_fila:
+        return moverFilas(matriz_aumentada, indice_del_pivote, numero_de_fila)
+    return matriz_aumentada
+
+def eliminar_el_resto(matriz_aumentada, indice_del_pivote, columna_actual, tamano):
+    fila_pivote = matriz_aumentada[indice_del_pivote]
+    for i in range(tamano):
+        if i != indice_del_pivote:
+            valor = matriz_aumentada[i][columna_actual]
+            matriz_aumentada[i] += (-valor) * fila_pivote
+    return matriz_aumentada
+
+def limpiar_errores(matriz, tol=1e-10):
+    return np.where(np.abs(matriz) < tol, 0, matriz)
+
+def gaussJordan(A, b, n, tol=1e-10):
+    A, b = A.astype(float), b.astype(float)
+    M = np.column_stack((A, b))
+    for k in range(n):
+        col = generar_columna_actual(M, k, n)
+        piv_i, piv_v = obtener_pivote(col, k, tol)
+        if piv_v is None: continue
+        M = confirmar_posicion_del_pivote(M, piv_i, col, k)
+        M = normalizar_pivote(M, k, piv_v)
+        M = eliminar_el_resto(M, k, k, n)
+        M = limpiar_errores(M)
+    return M
+
+def obtenerDeterminante(A, tol=1e-10):
+    det = np.linalg.det(A)
+    det = 0 if abs(det) < tol else det
+    msg = f"El determinante es igual a {det}\n"
+    if det != 0:
+        msg += "Con base a este valor, es de única solución"
+    else:
+        msg += "Ya que el determinante es igual a 0, es de ninguna o infinitas soluciones"
+    return msg
+
+def analizar_y_resolver_desde_rref(matriz_aumentada, A, b, tolerancia=1e-10):
+    n_filas = matriz_aumentada.shape[0]
+    n_cols = matriz_aumentada.shape[1]
+    n = n_cols - 1  # número de variables
+    
+    # Bloque izquierdo (A reducida) y término independiente
+    L = matriz_aumentada[:, :n]
+    rhs = matriz_aumentada[:, n]
+    
+    # Comprobar inconsistencia
+    filas_inconsistentes = []
+    for i in range(n_filas):
+        todosCeros = True
+        for j in range(n):
+            if abs(L[i][j]) > tolerancia:
+                todosCeros = False
+                break
+        if todosCeros and abs(rhs[i]) > tolerancia:
+            filas_inconsistentes.append(i)
+    
+    if filas_inconsistentes:
+        return {
+            "estado": "inconsistente",
+            "filas_conflictivas": filas_inconsistentes,
+            "rango_A": np.linalg.matrix_rank(A),
+            "rango_Aum": np.linalg.matrix_rank(np.column_stack((A, b)))
+        }
+    
+    # Identificar columnas pivote
+    filas_pivote = []
+    cols_pivote = []
+    for i in range(n_filas):
+        for j in range(n):
+            if abs(L[i][j]) > tolerancia:
+                if j not in cols_pivote:
+                    cols_pivote.append(j)
+                    filas_pivote.append(i)
+                break
+    
+    # Solución única
+    if len(cols_pivote) == n:
+        x = rhs.copy()
+        residuo = np.dot(A, x) - b
+        norma_residuo = np.linalg.norm(residuo)
+        
+        return {
+            "estado": "única",
+            "x": x,
+            "rango_A": len(cols_pivote),
+            "rango_Aum": len(cols_pivote),
+            "norma_residuo": norma_residuo
+        }
+    
+    # Infinitas soluciones
+    vars_libres = [j for j in range(n) if j not in cols_pivote]
+    
+    # Solución particular
+    x_particular = np.zeros(n)
+    for idx in range(len(filas_pivote)):
+        r = filas_pivote[idx]
+        c = cols_pivote[idx]
+        x_particular[c] = rhs[r]
+    
+    # Base del núcleo
+    base_nucleo = []
+    for f in vars_libres:
+        v = np.zeros(n)
+        v[f] = 1.0
+        for idx in range(len(filas_pivote)):
+            r = filas_pivote[idx]
+            c = cols_pivote[idx]
+            v[c] = -L[r][f]
+        base_nucleo.append(v)
+    
+    residuo_p = np.dot(A, x_particular) - b
+    norma_residuo_p = np.linalg.norm(residuo_p)
+    
+    return {
+        "estado": "infinitas",
+        "x_particular": x_particular,
+        "base_nucleo": base_nucleo,
+        "vars_libres": vars_libres,
+        "rango_A": len(cols_pivote),
+        "rango_Aum": len(cols_pivote),
+        "norma_residuo_particular": norma_residuo_p
+    }
+
+# Función principal de cálculo
+def ejecutar(event=None):
+    try:
+        # Obtener matriz y vector de los inputs
+        A, b = get_matrix_from_inputs()
+        resultado_div = document.getElementById("resultado")
+        resultado_div.innerHTML = ''
+        
+        # Mostrar matriz original
+        resultado_div.innerHTML += '<strong>Matriz original:</strong><br>'
+        resultado_div.innerHTML += format_matrix(A, b) + '<br><br>'
+        
+        # Calcular determinante
+        det_message = obtenerDeterminante(A)
+        resultado_div.innerHTML += '<strong>' + det_message + '</strong><br><br>'
+        
+        # Realizar eliminación de Gauss-Jordan
+        matriz_final = gaussJordan(A, b, matrix_size)
+        
+        # Mostrar matriz final
+        resultado_div.innerHTML += '<strong>Matriz final (RREF):</strong><br>'
+        resultado_div.innerHTML += format_augmented_matrix(matriz_final) + '<br><br>'
+        
+        # Análisis de la solución
+        resultado_div.innerHTML += '<strong>=== Análisis de la solución ===</strong><br>'
+        analisis = analizar_y_resolver_desde_rref(matriz_final, A, b)
+        mostrar_analisis(analisis, resultado_div)
+        
+    except Exception as e:
+        console.log(f"Error: {e}")
+        resultado_div = document.getElementById("resultado")
+        resultado_div.innerHTML = f'<span class="error">Error: {str(e)}</span>'
+
+# Función para mostrar el análisis de la solución
+def mostrar_analisis(analisis, resultado_div):
+    if analisis["estado"] == "única":
+        resultado_div.innerHTML += "Sistema con solución única.<br>"
+        resultado_div.innerHTML += "Solución: " + ", ".join([f"{x:.6f}" for x in analisis["x"]]) + "<br>"
+        resultado_div.innerHTML += f"Norma del residuo: {analisis['norma_residuo']:.10f}<br>"
+    elif analisis["estado"] == "infinitas":
+        resultado_div.innerHTML += "Sistema con infinitas soluciones.<br>"
+        resultado_div.innerHTML += "Solución particular: " + ", ".join([f"{x:.6f}" for x in analisis["x_particular"]]) + "<br>"
+        resultado_div.innerHTML += "Variables libres: " + ", ".join([f"x{v+1}" for v in analisis["vars_libres"]]) + "<br>"
+        if analisis["base_nucleo"]:
+            resultado_div.innerHTML += "Base del núcleo:<br>"
+            for idx, vec in enumerate(analisis["base_nucleo"]):
+                resultado_div.innerHTML += f"  v{idx+1} = " + ", ".join([f"{x:.6f}" for x in vec]) + "<br>"
+    elif analisis["estado"] == "inconsistente":
+        resultado_div.innerHTML += "Sistema inconsistente (sin solución).<br>"
+        resultado_div.innerHTML += f"Filas conflictivas: {', '.join([str(f+1) for f in analisis['filas_conflictivas']])}<br>"
+    
+    resultado_div.innerHTML += f"Rango de A: {analisis['rango_A']}<br>"
+    resultado_div.innerHTML += f"Rango de [A|b]: {analisis['rango_Aum']}<br>"
+
+# Función para formatear matriz aumentada
+def format_augmented_matrix(matrix):
+    result = ""
+    for i in range(matrix.shape[0]):
+        result += "["
+        for j in range(matrix.shape[1]):
+            if j == matrix.shape[1] - 1:
+                result += " | "
+            result += f"{matrix[i][j]:8.4f}"
+            if j < matrix.shape[1] - 1 and j != matrix.shape[1] - 2:
+                result += ", "
+        result += " ]<br>"
+    return result
+
+# Función para formatear matriz y vector b
+def format_matrix(A, b):
+    result = ""
+    for i in range(A.shape[0]):
+        result += "["
+        for j in range(A.shape[1]):
+            result += f"{A[i][j]:8.4f}"
+            if j < A.shape[1] - 1:
+                result += ", "
+        result += f" | {b[i]:8.4f} ]<br>"
+    return result
+
+# Inicializar la interfaz al cargar la página
+def initialize():
+    create_matrix_inputs()
+    
+    # Establecer eventos
+    set_size_proxy = create_proxy(set_matrix_size)
+    document.getElementById("setSizeBtn").addEventListener("click", set_size_proxy)
+    
+    ejecutar_proxy = create_proxy(ejecutar)
+    document.getElementById("btnCalcular").addEventListener("click", ejecutar_proxy)
+
+# Ejecutar inicialización cuando PyScript esté listo
+initialize()
+  </py-script>
+</body>
+</html>
