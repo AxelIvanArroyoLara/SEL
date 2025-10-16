@@ -34,9 +34,6 @@ SEL-MAIN/
 ├─ project2-teamKarkerkarkurkur.py
 └─ README.md (este archivo)
 
-markdown
-Copiar código
-
 ---
 
 ## ▶️ Cómo abrir/usar
