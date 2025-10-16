@@ -28,9 +28,7 @@ Este README documenta el funcionamiento de la calculadora de **Eliminación de G
 
 SEL-MAIN/
 └─ project2-teamKarkerkarkurkur/
-├─ estilomatriz.css
 ├─ index.html
-├─ integrador-python.js
 ├─ project2-teamKarkerkarkurkur.py
 └─ README.md (este archivo)
 
@@ -60,12 +58,6 @@ SEL-MAIN/
   - reducir con **Gauss–Jordan** a **RREF**,
   - **analizar soluciones** (única / infinitas / inconsistente), rango y base del núcleo.
 
-- **integrador-python.js**  
-  Módulo de interfaz alterna:
-  - genera matrices visuales `A`, vector `b` y etiquetas `x`,
-  - valida entradas, carga un **ejemplo 3×3**, hace *debug*,
-  - define un `solveSystem()` **placeholder** (punto para enchufar tu método real) y muestra resultados/“pasos”.
-
 - **project2-teamKarkerkarkurkur.py**  
   Implementación en **NumPy** de la misma idea:
   - Gauss–Jordan sobre matriz aumentada, limpieza numérica, impresión de estados,
@@ -73,7 +65,5 @@ SEL-MAIN/
   - análisis de solución desde la RREF (rango, solución única/infinitas/inconsistente, base del núcleo),
   - `main()` con ejemplo de uso y verificación.
 
-- **estilomatriz.css**  
-  Estilos para la versión de interfaz del archivo JS alterno (`integrador-python.js`): *layout*, matrices, vectores, contenedores de pasos, estados de solución, etc.
 
 ---
